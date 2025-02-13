@@ -68,7 +68,11 @@ $ingredients_list = explode(', ', $recipe['ingredients']);
                                             <span class="badge bg-success float-end">
                                                 <i class="fas fa-check"></i> Available
                                             </span>
-                                        <?php endif; ?>
+                                        <?php else : ?>
+                                            <span class="badge bg-danger float-end">
+                                                <i class="fas fa-x"></i> Not Available
+                                            </span>
+                                        <?php endif ?>
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
