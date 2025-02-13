@@ -16,24 +16,25 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         // Add/Edit item
         
-        $name = trim($_POST['name']);
+        $name = trim($_POST['alias_name']);
         $category = $_POST['category'];
         $quantity = (int)$_POST['quantity'];
         $exp_date = $_POST['exp_date'];
+        $ingredient = $_POST['ingredient'];
         
         if(isset($_POST['edit_id']) && $_POST['edit_id'] != null) {
 
             // Update existing item
             $stmt = $pdo->prepare("UPDATE pantry_items 
-                                   SET name=?, category=?, quantity=?, expiration_date=?
+                                   SET alias_name=?, ingredient=?, category=?, quantity=?, expiration_date=?
                                    WHERE id=? AND user_id=?");
-            $stmt->execute([$name, $category, $quantity, $exp_date, $_POST['edit_id'], $_SESSION['user_id']]);
+            $stmt->execute([$name, $ingredient, $category, $quantity, $exp_date, $_POST['edit_id'], $_SESSION['user_id']]);
         } else {
             // Insert new item
             $stmt = $pdo->prepare("INSERT INTO pantry_items 
-                                  (user_id, name, category, quantity, expiration_date)
-                                  VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$_SESSION['user_id'], $name, $category, $quantity, $exp_date]);
+                                  (user_id, alias_name, ingredient, category, quantity, expiration_date)
+                                  VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$_SESSION['user_id'], $name, $ingredient, $category, $quantity, $exp_date]);
         }
     }
 }
@@ -55,7 +56,7 @@ if($category_filter !== 'all') {
 // Apply sorting
 switch($sort) {
     case 'name_asc':
-        $query .= " ORDER BY name ASC";
+        $query .= " ORDER BY alias_name ASC";
         break;
     case 'expiration_date_desc':
         $query .= " ORDER BY expiration_date DESC";
@@ -67,6 +68,7 @@ switch($sort) {
 $stmt = $pdo->prepare($query);
 $stmt->execute($params);
 $items = $stmt->fetchAll();
+$ingredients = $pdo->query("SELECT * FROM ingredients")->fetchAll();
 ?>
 
 <?php include 'includes/header.php'; ?>
@@ -113,7 +115,8 @@ $items = $stmt->fetchAll();
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Item Name</th>
+                                    <th>Alias Name</th>
+                                    <th>Ingregiant</th>
                                     <th>Category</th>
                                     <th>Quantity</th>
                                     <th>Expiration Date</th>
@@ -129,7 +132,8 @@ $items = $stmt->fetchAll();
                                     $days_left = $exp_date > $today ? $diff->days : -$diff->days;
                                 ?>
                                 <tr class="<?= $days_left < 0 ? 'table-danger' : ($days_left <= 3 ? 'table-warning' : '') ?>">
-                                    <td><?= htmlspecialchars($item['name']) ?></td>
+                                    <td><strong><?= htmlspecialchars($item['alias_name']) ?></strong></td>
+                                    <td><?= htmlspecialchars($item['ingredient']) ?></td>
                                     <td><?= $item['category'] ?></td>
                                     <td><?= $item['quantity'] ?></td>
                                     <td><?= date('M j, Y', strtotime($item['expiration_date'])) ?></td>
@@ -137,7 +141,7 @@ $items = $stmt->fetchAll();
                                     <td>
                                         <button class="btn btn-sm btn-outline-primary edit-btn"
                                                 data-id="<?= $item['id'] ?>"
-                                                data-name="<?= htmlspecialchars($item['name']) ?>"
+                                                data-name="<?= htmlspecialchars($item['alias_name']) ?>"
                                                 data-category="<?= $item['category'] ?>"
                                                 data-quantity="<?= $item['quantity'] ?>"
                                                 data-exp-date="<?= $item['expiration_date'] ?>">
@@ -174,8 +178,8 @@ $items = $stmt->fetchAll();
                     <input type="hidden" name="edit_id" id="editId">
                     
                     <div class="mb-3">
-                        <label class="form-label">Item Name</label>
-                        <input type="text" class="form-control" name="name" id="itemName" required>
+                        <label class="form-label">Item Alias Name</label>
+                        <input type="text" class="form-control" name="alias_name" id="itemName" required>
                     </div>
                     
                     <div class="mb-3">
@@ -183,6 +187,15 @@ $items = $stmt->fetchAll();
                         <select class="form-select" name="category" id="itemCategory" required>
                             <?php foreach($categories as $cat): ?>
                                 <option value="<?= $cat ?>"><?= $cat ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Ingrediant</label>
+                        <select class="form-select" name="ingredient" id="itemIngredient" required>
+                            <?php foreach($ingredients as $ing): ?>
+                                <option value="<?= $ing["name"] ?>"><?= $ing["name"] ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
